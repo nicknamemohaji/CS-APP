@@ -1,6 +1,6 @@
 # Bomb lab - CSAPP
 
-> last update 24/1/28
+> last update 24/3/23
 
 ## Basic infos
 
@@ -23,10 +23,13 @@ Dump of assembler code for function phase_1:
 End of assembler dump.
 ```
 
-- 이때, `rdi` 레지스터에는 `read_input`함수의 결과가 담겨 있다. (`x/s $rdi`로 확인 가능)
+- 이때, `rdi` 레지스터에는 `read_input`함수의 결과가 담겨 있다.
+    - 리눅스에서 사용되는 sysv x86 컨벤션 상 인자는 [rdi -> rsi -> rdx -> rcx -> r8 -> r9 -> 스택] 순으로 전달하는데,
+    - main 루틴에서 호출하기 전 준비하는 부분을 살펴보면 rdi에 입력 버퍼를 담는다.
+    - 디버거에서 이 값을 보려면 `x/s $rdi`로 확인 가능
 - `strings_not_equal`함수의 첫 인자로 입력값을, 두 번째 인자로 0x402400을 넣어 호출하고
+    - 0x402400은 "Border relations with Canada have never been better."이라는 문자열이다.
 - 이 값에 따라 explode_bomb으로 넘어가거나 함수가 정상 종료된다. 
-- 0x402400은 "Border relations with Canada have never been better."이라는 문자열이다.
 
 즉, `phase_1`함수는 다음 C코드로 번역할 수 있다.
 ```c
@@ -41,9 +44,7 @@ void phase_1(char *input)
 `strings_not_equal`함수의 동작을 확인해 볼 필요가 있다.
 ```assembly
 Dump of assembler code for function strings_not_equal:
-   0x0000000000401338 <+0>:     push   %r12
-   0x000000000040133a <+2>:     push   %rbp
-   0x000000000040133b <+3>:     push   %rbx
+   (...)
    0x000000000040133c <+4>:     mov    %rdi,%rbx
    0x000000000040133f <+7>:     mov    %rsi,%rbp
    0x0000000000401342 <+10>:    call   0x40131b <string_length>
@@ -75,9 +76,7 @@ Dump of assembler code for function strings_not_equal:
    0x0000000000401394 <+92>:    jmp    0x40139b <strings_not_equal+99>
    0x0000000000401396 <+94>:    mov    $0x1,%edx
    0x000000000040139b <+99>:    mov    %edx,%eax
-   0x000000000040139d <+101>:   pop    %rbx
-   0x000000000040139e <+102>:   pop    %rbp
-   0x000000000040139f <+103>:   pop    %r12
+   (...)
    0x00000000004013a1 <+105>:   ret    
 End of assembler dump.
 ```
@@ -156,8 +155,7 @@ int string_length(char *str)
 ```assembly
 Dump of assembler code for function phase_2:
 => 0x0000000000400efc <+0>:     push   %rbp
-   0x0000000000400efd <+1>:     push   %rbx
-   0x0000000000400efe <+2>:     sub    $0x28,%rsp
+   (...)
    0x0000000000400f02 <+6>:     mov    %rsp,%rsi
    0x0000000000400f05 <+9>:     call   0x40145c <read_six_numbers>
    0x0000000000400f0a <+14>:    cmpl   $0x1,(%rsp)
@@ -176,9 +174,7 @@ Dump of assembler code for function phase_2:
    0x0000000000400f30 <+52>:    lea    0x4(%rsp),%rbx
    0x0000000000400f35 <+57>:    lea    0x18(%rsp),%rbp
    0x0000000000400f3a <+62>:    jmp    0x400f17 <phase_2+27>
-   0x0000000000400f3c <+64>:    add    $0x28,%rsp
-   0x0000000000400f40 <+68>:    pop    %rbx
-   0x0000000000400f41 <+69>:    pop    %rbp
+   (...)
    0x0000000000400f42 <+70>:    ret    
 End of assembler dump.
 ```
@@ -217,9 +213,7 @@ void phase_2(char *str)
 
 ```assembly
 Dump of assembler code for function phase_3:
-=> 0x0000000000400f43 <+0>:     sub    $0x18,%rsp
-   0x0000000000400f47 <+4>:     lea    0xc(%rsp),%rcx
-   0x0000000000400f4c <+9>:     lea    0x8(%rsp),%rdx
+=> (...)
    0x0000000000400f51 <+14>:    mov    $0x4025cf,%esi
    0x0000000000400f56 <+19>:    mov    $0x0,%eax
    0x0000000000400f5b <+24>:    call   0x400bf0 <__isoc99_sscanf@plt>
@@ -251,7 +245,7 @@ Dump of assembler code for function phase_3:
    0x0000000000400fbe <+123>:   cmp    0xc(%rsp),%eax
    0x0000000000400fc2 <+127>:   je     0x400fc9 <phase_3+134>
    0x0000000000400fc4 <+129>:   call   0x40143a <explode_bomb>
-   0x0000000000400fc9 <+134>:   add    $0x18,%rsp
+   (...)
    0x0000000000400fcd <+138>:   ret    
 End of assembler dump.
 ```
@@ -429,3 +423,152 @@ func4는 재귀적으로 작동한다. 최종적으로 리턴값이 0이 되게 
 
 ## Phase 5
 
+```assembly
+Dump of assembler code for function phase_5:
+=> (...)
+   0x0000000000401078 <+22>:    xor    %eax,%eax
+   0x000000000040107a <+24>:    call   0x40131b <string_length>
+   0x000000000040107f <+29>:    cmp    $0x6,%eax
+   0x0000000000401082 <+32>:    je     0x4010d2 <phase_5+112>
+   0x0000000000401084 <+34>:    call   0x40143a <explode_bomb>
+   0x0000000000401089 <+39>:    jmp    0x4010d2 <phase_5+112>
+   0x000000000040108b <+41>:    movzbl (%rbx,%rax,1),%ecx           // rbx = rdi -> *input, rax <-- loop counter (0 ~ 5)
+   0x000000000040108f <+45>:    mov    %cl,(%rsp)                   // *rsp = input[i]
+   0x0000000000401092 <+48>:    mov    (%rsp),%rdx
+   0x0000000000401096 <+52>:    and    $0xf,%edx
+   0x0000000000401099 <+55>:    movzbl 0x4024b0(%rdx),%edx          // edx = __stream[input[i] & 0xf]
+   0x00000000004010a0 <+62>:    mov    %dl,0x10(%rsp,%rax,1)        // (rsp + 0x10)[i] = __stream[input[i] & 0xf]
+   0x00000000004010a4 <+66>:    add    $0x1,%rax
+   0x00000000004010a8 <+70>:    cmp    $0x6,%rax
+   0x00000000004010ac <+74>:    jne    0x40108b <phase_5+41>
+   0x00000000004010ae <+76>:    movb   $0x0,0x16(%rsp)
+   0x00000000004010b3 <+81>:    mov    $0x40245e,%esi
+   0x00000000004010b8 <+86>:    lea    0x10(%rsp),%rdi
+   0x00000000004010bd <+91>:    call   0x401338 <strings_not_equal> // strings_not_equal(rsp + 0x10, __stream)
+   0x00000000004010c2 <+96>:    test   %eax,%eax
+   0x00000000004010c4 <+98>:    je     0x4010d9 <phase_5+119>
+   0x00000000004010c6 <+100>:   call   0x40143a <explode_bomb>
+   0x00000000004010cb <+105>:   nopl   0x0(%rax,%rax,1)
+   0x00000000004010d0 <+110>:   jmp    0x4010d9 <phase_5+119>
+   0x00000000004010d2 <+112>:   mov    $0x0,%eax
+   0x00000000004010d7 <+117>:   jmp    0x40108b <phase_5+41>
+   (...)
+   0x00000000004010ee <+140>:   add    $0x20,%rsp
+   0x00000000004010f2 <+144>:   pop    %rbx
+   0x00000000004010f3 <+145>:   ret    
+End of assembler dump.
+```
+
+stack canary를 확인하는 코드가 있어서 좀 헷갈렸다...
+번역하면 다음과 같다.
+```c
+void phase_5(char *input)
+{
+    if (string_length(input) != 6)
+        explode_bomb();
+    
+    char stream[] = "maduiersnfotvbyl";
+    char compare[6] = {0};
+    for (int i = 0; i < 6; i++)
+        compare[i] = stream[input[i] & 0xf];
+    
+    if (strings_not_eqeual(compare, "flyers"))
+        explode_bomb();
+}
+```
+
+즉, 입력값의 각 문자의 아스키 코드 하위 16비트가 순서대로 [9, 15, 14, 5, 6, 7]여야 한다.
+여러 종류가 가능하지만, 입력하기 쉽게 영문 아스키에서 찾자.
+
+> Phase 5 Key: "ionefg"
+
+## Phase 6
+
+```assembly
+=> (...)
+   0x0000000000401103 <+15>:    mov    %rsp,%rsi
+   0x0000000000401106 <+18>:    call   0x40145c <read_six_numbers>
+   0x000000000040110b <+23>:    mov    %rsp,%r14
+   0x000000000040110e <+26>:    mov    $0x0,%r12d
+   0x0000000000401114 <+32>:    mov    %r13,%rbp
+   0x0000000000401117 <+35>:    mov    0x0(%r13),%eax
+   0x000000000040111b <+39>:    sub    $0x1,%eax
+   0x000000000040111e <+42>:    cmp    $0x5,%eax
+   0x0000000000401121 <+45>:    jbe    0x401128 <phase_6+52>
+   0x0000000000401123 <+47>:    call   0x40143a <explode_bomb>
+   0x0000000000401128 <+52>:    add    $0x1,%r12d
+   0x000000000040112c <+56>:    cmp    $0x6,%r12d
+   0x0000000000401130 <+60>:    je     0x401153 <phase_6+95>
+   0x0000000000401132 <+62>:    mov    %r12d,%ebx
+   0x0000000000401135 <+65>:    movslq %ebx,%rax
+   0x0000000000401138 <+68>:    mov    (%rsp,%rax,4),%eax
+   0x000000000040113b <+71>:    cmp    %eax,0x0(%rbp)
+   0x000000000040113e <+74>:    jne    0x401145 <phase_6+81>
+   0x0000000000401140 <+76>:    call   0x40143a <explode_bomb>
+   0x0000000000401145 <+81>:    add    $0x1,%ebx
+   0x0000000000401148 <+84>:    cmp    $0x5,%ebx
+   0x000000000040114b <+87>:    jle    0x401135 <phase_6+65>
+   0x000000000040114d <+89>:    add    $0x4,%r13
+   0x0000000000401151 <+93>:    jmp    0x401114 <phase_6+32>
+   0x0000000000401153 <+95>:    lea    0x18(%rsp),%rsi
+   0x0000000000401158 <+100>:   mov    %r14,%rax
+   0x000000000040115b <+103>:   mov    $0x7,%ecx
+   0x0000000000401160 <+108>:   mov    %ecx,%edx
+   0x0000000000401162 <+110>:   sub    (%rax),%edx
+   0x0000000000401164 <+112>:   mov    %edx,(%rax)
+   0x0000000000401166 <+114>:   add    $0x4,%rax
+   0x000000000040116a <+118>:   cmp    %rsi,%rax
+   0x000000000040116d <+121>:   jne    0x401160 <phase_6+108>
+   0x000000000040116f <+123>:   mov    $0x0,%esi
+   0x0000000000401174 <+128>:   jmp    0x401197 <phase_6+163>
+   0x0000000000401176 <+130>:   mov    0x8(%rdx),%rdx
+   0x000000000040117a <+134>:   add    $0x1,%eax
+   0x000000000040117d <+137>:   cmp    %ecx,%eax
+   0x000000000040117f <+139>:   jne    0x401176 <phase_6+130>
+   0x0000000000401181 <+141>:   jmp    0x401188 <phase_6+148>
+   0x0000000000401183 <+143>:   mov    $0x6032d0,%edx
+   0x0000000000401188 <+148>:   mov    %rdx,0x20(%rsp,%rsi,2)
+   0x000000000040118d <+153>:   add    $0x4,%rsi
+   0x0000000000401191 <+157>:   cmp    $0x18,%rsi
+   0x0000000000401195 <+161>:   je     0x4011ab <phase_6+183>
+   0x0000000000401197 <+163>:   mov    (%rsp,%rsi,1),%ecx
+   0x000000000040119a <+166>:   cmp    $0x1,%ecx
+   0x000000000040119d <+169>:   jle    0x401183 <phase_6+143>
+   0x000000000040119f <+171>:   mov    $0x1,%eax
+   0x00000000004011a4 <+176>:   mov    $0x6032d0,%edx
+   0x00000000004011a9 <+181>:   jmp    0x401176 <phase_6+130>
+   0x00000000004011ab <+183>:   mov    0x20(%rsp),%rbx
+   0x00000000004011b0 <+188>:   lea    0x28(%rsp),%rax
+   0x00000000004011b5 <+193>:   lea    0x50(%rsp),%rsi
+   0x00000000004011ba <+198>:   mov    %rbx,%rcx
+   0x00000000004011bd <+201>:   mov    (%rax),%rdx
+   0x00000000004011c0 <+204>:   mov    %rdx,0x8(%rcx)
+   0x00000000004011c4 <+208>:   add    $0x8,%rax
+   0x00000000004011c8 <+212>:   cmp    %rsi,%rax
+   0x00000000004011cb <+215>:   je     0x4011d2 <phase_6+222>
+   0x00000000004011cd <+217>:   mov    %rdx,%rcx
+   0x00000000004011d0 <+220>:   jmp    0x4011bd <phase_6+201>
+   0x00000000004011d2 <+222>:   movq   $0x0,0x8(%rdx)
+   0x00000000004011da <+230>:   mov    $0x5,%ebp
+   0x00000000004011df <+235>:   mov    0x8(%rbx),%rax
+   0x00000000004011e3 <+239>:   mov    (%rax),%eax
+   0x00000000004011e5 <+241>:   cmp    %eax,(%rbx)
+   0x00000000004011e7 <+243>:   jge    0x4011ee <phase_6+250>
+   0x00000000004011e9 <+245>:   call   0x40143a <explode_bomb>
+   0x00000000004011ee <+250>:   mov    0x8(%rbx),%rbx
+   0x00000000004011f2 <+254>:   sub    $0x1,%ebp
+   0x00000000004011f5 <+257>:   jne    0x4011df <phase_6+235>
+   (...)
+   0x0000000000401203 <+271>:   ret    
+End of assembler dump.
+```
+
+번역하면 다음과 같다.
+
+```c
+void phase_5(char *input)
+{
+    int n[6];     // rsp, rsp + 0x4 , rsp + 0x8, rsp + 0xc, rsp + 0x10, rsp + 0x14
+    if(sscanf("%d %d %d %d %d %d", str, &n[0], &n[1], &n[2], &n[3], &n[4], &n[5]) < 5)
+}
+```
