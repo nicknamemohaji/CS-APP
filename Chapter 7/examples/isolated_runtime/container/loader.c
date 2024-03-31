@@ -1,3 +1,5 @@
+// gcc -static loader.c -o loader -lseccomp
+
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -57,5 +59,6 @@ int main(int argc, char* argv[])
 		perror("waitpid");
 		exit(EXIT_FAILURE);
 	}
+	printf(">>%d\n", status);
 	return status;
 }
